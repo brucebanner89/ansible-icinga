@@ -1,0 +1,31 @@
+   - name: install cpanm for perl 
+     apt:
+         name: cpanminus 
+         state: present
+         force: yes
+         update_cache: yes
+   
+   - name: perl-test  
+     shell: cpanm Redis --force  
+     
+
+
+   - name: copy-nagios-redis
+     copy:
+         src: /etc/ansible/nagios-config/redis_db
+         dest: /usr/lib/nagios/plugins/redis_db
+         mode: 0755
+         backup: yes
+
+   - name: copy-nrpe-config
+     copy:
+         src: /etc/ansible/nagios-config/server.cfg
+         dest: /etc/nagios/nrpe.d/server.cfg
+
+   - name: restart nrpe
+     service:
+          name: nagios-nrpe-server
+          state: restarted
+   
+  
+      

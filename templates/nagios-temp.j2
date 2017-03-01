@@ -1,0 +1,62 @@
+object Service "CPU Load" {
+        import "generic-service"
+        host_name = "{{ hostitem }}"
+        check_command = "nrpe-check-1arg"
+        vars.host = "{{ ip }}"
+        vars.check = "check_cpu"
+}
+
+object Service "Check DISK" {
+        import "generic-service"
+        host_name = "{{ hostitem }}"
+        check_command = "nrpe-check-1arg"
+        vars.host = "{{ ip }}"
+        vars.check = "check_disk"
+}
+
+
+
+//object Service "NodeJS-Response-Time" {
+//        import "generic-service"
+//        host_name = "{{ hostitem }}"
+//        check_command = "nrpe-check-1arg"
+//        vars.host = "{{ ip }}"
+//        vars.check = "check_response_time"
+//}
+
+
+object Service "NRPE check Node_Port" {
+        import "generic-service"
+        host_name = "{{ hostitem }}"
+        check_command = "nrpe-check-1arg"
+        vars.host = "{{ ip }}"
+        vars.check = "check_tcp"
+}
+
+
+
+object Service "NRPE check PM2" {
+        import "generic-service"
+        host_name = "{{ hostitem }}"
+        check_command = "nrpe-check-1arg"
+        vars.host = "{{ ip }}"
+        vars.check = "check_node"
+}
+
+object Service "NODE_CONNECTIONS" {
+        import "generic-service"
+        host_name = "{{ hostitem }}"
+        check_command = "nrpe-check-1arg"
+        vars.host = "{{ ip }} "
+        vars.check = "check_connect"
+}
+
+object Service "CHECK_REDIS_DB" {
+        import "generic-service"
+        host_name = "{{ hostitem }}"
+        check_command = "nrpe-check-1arg"
+        vars.host = "{{ ip }}"
+        vars.check = "check_redis_db"
+}
+
+

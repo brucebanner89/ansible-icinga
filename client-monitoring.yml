@@ -1,0 +1,47 @@
+   - name: Install nagios-nrpe-plugins
+     apt:
+         name: nagios-nrpe-server
+         state: present
+         force: yes
+         update_cache: yes
+   - name: Install nagios-plugins
+     apt:
+         name: nagios-plugins
+         state: present
+         force: yes
+         update_cache: yes
+
+
+   - name: copy-nagios-config
+     copy:
+         src: /etc/ansible/nagios-config/check_connect
+         dest: /usr/lib/nagios/plugins/check_connect
+         mode: 0755
+         backup: yes
+
+   - name: copy-nagios-nginx_logs
+     copy:
+         src: /etc/ansible/nagios-config/check_nginx_status
+         dest: /usr/lib/nagios/plugins/check_nginx_status
+         mode: 0755
+         backup: yes
+
+   - name: copy-nagios-redis
+     copy:
+         src: /etc/ansible/redis/redis_db
+         dest: /usr/lib/nagios/plugins/redis_db
+         mode: 0755
+         backup: yes
+
+   - name: copy-nrpe-config
+     copy:
+         src: /etc/ansible/nagios-config/server.cfg
+         dest: /etc/nagios/nrpe.d/server.cfg 
+
+   - name: restart nrpe
+     service: 
+          name: nagios-nrpe-server
+          state: restarted
+    
+   - include: /etc/ansible/playbook/icinga2/monitoring_redis.yml
+     

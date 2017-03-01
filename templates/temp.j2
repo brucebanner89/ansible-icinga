@@ -1,0 +1,22 @@
+
+object Host  "{{ hostitem }}"  {
+  import "generic-host"
+  address =  "{{ ip }}"
+  address6 = "::1"
+  vars.os = "Linux-adexchange"
+  vars.remote_client =  "{{ hostitem }}"
+  vars.notification_interval = 1h
+  vars.notification_period = "24x7"
+  vars.notification["mail"] = {
+    /* The UserGroup `adexchange` is defined in `users.conf`. */
+    groups = [ "adexchange" ]
+  }
+    check_command = "load"
+
+  /* host specific check arguments */
+  vars.users_wgreater = 10
+  vars.users_cgreater = 20
+  vars.sla = "24x7"
+
+}
+

@@ -1,0 +1,84 @@
+#ansible-playbook /etc/ansible/playbooks/icinga2.yml -e hostitem=agent.example.com
+#ansible-playbook icinga.yml -e hostitem=adventure -e ip=40.121.83.158  
+#or just ansible-playbook icinga.yml
+---
+- hosts: monitoring
+  vars_prompt:
+    - name: "hostitem"
+      prompt: "Please enter name of server "
+    - name: "ip"
+      prompt: "Please enter ip-address of server "
+
+
+  sudo: yes
+  tasks:
+   -  name: generate ticket on the icinga master and save it as a variable
+      shell: /usr/sbin/icinga2 pki ticket --cn {{ hostitem }}
+      register: ticket
+
+- hosts: "{{ hostitem }}"
+  vars:
+    master_hostname: monitoring
+    master_port: 5665
+    master_ip: "{{ hostvars['monitoring']['ansible_default_ipv4']['13.73.160.219'] }}"
+
+  tasks:
+   -  name: add hosts
+      lineinfile:
+         dest=/etc/hosts
+         backup=yes
+         line='13.73.160.219  monitoring'
+
+   - name: Add ICINGA2 repo
+     apt_repository:
+          repo: ppa:formorer/icinga
+
+   - name: Install icinga2
+     apt:
+         name: icinga2
+         state: present
+         force: yes
+         update_cache: yes
+
+
+
+   -  name: create pki folder
+      file: path=/etc/icinga2/pki state=directory mode=0700 owner=nagios group=nagios
+   -  name: create cert
+      shell: icinga2 pki new-cert --cn {{ hostitem }} --key /etc/icinga2/pki/{{ hostitem }}.key --cert /etc/icinga2/pki/{{ hostitem }}.crt
+   -  name: save the masters cert as trustedcert
+      shell: icinga2 pki save-cert --key /etc/icinga2/pki/{{ hostitem }}.key --cert /etc/icinga2/pki/{{ hostitem }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --host {{ master_hostname }}
+   -  name: request the certificate from the icinga server
+      shell: "icinga2 pki request --host 13.73.160.219 --port 5665 --ticket {{ hostvars['monitoring']['ticket']['stdout'] }} --key /etc/icinga2/pki/{{ hostitem }}.key --cert /etc/icinga2/pki/{{ hostitem }}.crt --trustedcert /etc/icinga2/pki/trusted-master.crt --ca /etc/icinga2/pki/ca.key"
+   -  name: node setup
+      shell: "icinga2 node setup --ticket {{ hostvars['monitoring']['ticket']['stdout'] }} --endpoint {{ master_hostname }} --zone {{ hostitem }} --master_host {{ master_hostname }} --trustedcert /etc/icinga2/pki/trusted-master.crt --cn {{ hostitem }}"
+
+- hosts: monitoring
+  sudo: yes
+  tasks:
+   -  name: add host
+      shell: icinga2 node add {{ hostitem }}
+   -  name: set host ip
+      shell: icinga2 node set {{ hostitem }} --host {{ hostitem }} --port 5665
+
+   - name: copy server conf  template
+     template: src=/etc/ansible/playbook/icinga2/templates/temp.j2 dest="/etc/icinga2/servers_conf.d/{{ hostitem }}.conf"
+
+   - name: copy server nagios-conf  template
+     template: src=/etc/ansible/playbook/icinga2/templates/nagios-temp.j2 dest="/etc/icinga2/servers_conf.d/{{ hostitem }}-nagios-nrpe.conf"
+
+
+- hosts: "{{ hostitem }}"
+  sudo: yes
+  tasks:
+
+   - include: /etc/ansible/playbook/icinga2/client-monitoring.yml
+
+- hosts: monitoring
+  sudo: yes
+  tasks: 
+    - name: Restart Icinga2
+      service:
+          name: icinga2
+          state: restarted
+
